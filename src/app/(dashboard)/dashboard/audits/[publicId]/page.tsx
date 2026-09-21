@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getSession } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
+import { PaymentForm } from "@/components/dashboard/payment-form";
 
 export default async function AuditDetailPage({
   params,
@@ -45,9 +46,10 @@ export default async function AuditDetailPage({
         <div className="mt-8 rounded-lg border border-[var(--border)] p-6">
           <h2 className="font-medium">Payment required</h2>
           <p className="mt-2 text-sm text-[var(--muted-foreground)]">
-            This audit will not start until KES 500 is confirmed server-side. Payment integration is the next phase. The crawl will not run from this page.
+            This audit will not start until KES 500 is confirmed by the payment provider webhook. Approving on the client is not enough.
           </p>
           <p className="mt-4 text-sm">Configuration: {audit.crawlLimit} pages · depth {audit.crawlDepth}</p>
+          <PaymentForm auditPublicId={audit.publicId} />
         </div>
       )}
 
