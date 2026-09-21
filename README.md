@@ -1,8 +1,8 @@
 # Hukan SEO Auditor
 
-Professional SaaS platform for comprehensive website SEO audits.
+Professional SaaS for website SEO audits. **KES 500** per audit (one-time payment).
 
-**Price:** KES 500 per audit (one-time payment).
+**Repository:** https://github.com/Levy254885/hukan-seo-auditor
 
 ## Status
 
@@ -16,34 +16,33 @@ Professional SaaS platform for comprehensive website SEO audits.
 | 6 | Scoring, issues, comparison | **Done** |
 | 7 | Dashboard & report UI | **Done** |
 | 8 | PDF generation | **Done** |
-| 9 | Search Console OAuth | Pending |
+| 9 | Search Console OAuth | Pending (stubs / env ready) |
 | 10 | Admin CRM & fix requests | **Done** |
-| 11 | Emails, observability, tests | Pending |
-| 12 | Deployment & production hardening | Pending |
+| 11 | Emails, observability, tests | **Done** |
+| 12 | Deployment config | **Done** (see DEPLOY.md) |
 
-## Admin
+## Product path
 
-Set `ADMIN_EMAIL` to the account that should receive `ADMIN` role on register/login.
+1. Register / sign in
+2. Add website (SSRF-safe)
+3. Configure audit → `PENDING_PAYMENT`
+4. Pay KES 500 (webhook confirms)
+5. Worker crawls → scores → issues
+6. Report, compare, PDF, request fixes
 
-- `/admin` — overview KPIs
-- `/admin/customers` — users
-- `/admin/payments` — payment ledger
-- `/admin/fix-requests` — CRM pipeline (status, quote, notes)
-
-## Fix requests
-
-Customers submit from a completed audit report. Pipeline statuses: NEW → CONTACTED → QUOTED → APPROVED → IN_PROGRESS → COMPLETED / RE_AUDIT / CLOSED.
-
-## Local setup
+## Commands
 
 ```bash
-git clone https://github.com/Levy254885/hukan-seo-auditor.git
-cd hukan-seo-auditor
 npm install
 cp .env.example .env
 npx prisma generate && npx prisma db push
 npm run dev
 npm run worker
+npm test
 ```
 
-Repo: https://github.com/Levy254885/hukan-seo-auditor
+Health: `GET /api/health`
+
+## Deploy
+
+See [DEPLOY.md](./DEPLOY.md) for Vercel, Docker, env checklist, and worker notes.
