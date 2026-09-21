@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
         data: {
           status: "PROCESSING",
           checkoutRequestId: stk.CheckoutRequestID,
-          merchantRequestID: stk.MerchantRequestID,
+          merchantRequestId: stk.MerchantRequestID,
         },
       });
 
