@@ -5,6 +5,8 @@ import { checkSiteFiles } from "@/lib/seo/crawler/site-files";
 import { detectPageIssues, type DetectedIssue } from "@/lib/seo/checks/issues";
 import { scoreFromIssues, SCORING_VERSION } from "@/lib/seo/scoring/score";
 import { getDomainFromUrl, parsePublicHttpUrl } from "@/lib/seo/url";
+import { sendEmail } from "@/lib/email/send";
+import { auditCompletedEmail } from "@/lib/email/templates";
 
 function normalizeKey(url: string): string {
   try {
@@ -237,6 +239,25 @@ export async function runAuditCrawl(auditId: string) {
     });
 
     await prisma.report.create({ data: { auditId } });
+
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: audit.userId },
+        select: { email: true, name: true },
+      });
+      if (user?.email) {
+        const tpl = auditCompletedEmail({
+          name: user.name,
+          domain: audit.domain,
+          score: scores.overall,
+          issuesCount: seenIssue.size,
+          auditPublicId: audit.publicId,
+        });
+        await sendEmail({ to: user.email, subject: tpl.subject, text: tpl.text });
+      }
+    } catch (e) {
+      console.error("[email] audit complete failed", e);
+    }
 
     return { pagesCrawled, issues: seenIssue.size, score: scores.overall };
   } catch (error) {
