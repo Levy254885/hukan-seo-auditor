@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getSession } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
 import { PaymentForm } from "@/components/dashboard/payment-form";
+import { FixRequestForm } from "@/components/dashboard/fix-request-form";
 
 export default async function AuditDetailPage({
   params,
@@ -189,6 +190,18 @@ export default async function AuditDetailPage({
                 </table>
               </div>
             )}
+          </section>
+
+          <section>
+            <h2 className="text-lg font-medium mb-4">Request SEO fixes</h2>
+            <p className="text-sm text-[var(--muted-foreground)] mb-4">
+              Want help implementing these findings? Submit a request and our team will contact you with a quote.
+            </p>
+            <FixRequestForm
+              auditPublicId={audit.publicId}
+              defaultName={session.user.name}
+              defaultEmail={session.user.email}
+            />
           </section>
         </>
       )}
