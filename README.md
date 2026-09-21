@@ -15,29 +15,35 @@ Professional SaaS platform for comprehensive website SEO audits.
 | 5 | Crawler & technical SEO engine | **Done** |
 | 6 | Scoring, issues, comparison | **Done** |
 | 7 | Dashboard & report UI | **Done** |
-| 8 | PDF generation | **Done** (v1 text PDF) |
+| 8 | PDF generation | **Done** |
 | 9 | Search Console OAuth | Pending |
-| 10 | Admin CRM & fix requests | Pending |
+| 10 | Admin CRM & fix requests | **Done** |
 | 11 | Emails, observability, tests | Pending |
 | 12 | Deployment & production hardening | Pending |
 
-## Product path
+## Admin
 
-1. Register / sign in
-2. Add website (SSRF-safe URL check)
-3. Configure crawl limits → audit `PENDING_PAYMENT`
-4. Pay KES 500 (M-Pesa STK or Paystack webhook)
-5. Worker crawls, scores, stores issues
-6. View report, compare snapshots, download PDF
+Set `ADMIN_EMAIL` to the account that should receive `ADMIN` role on register/login.
 
-## Key commands
+- `/admin` — overview KPIs
+- `/admin/customers` — users
+- `/admin/payments` — payment ledger
+- `/admin/fix-requests` — CRM pipeline (status, quote, notes)
+
+## Fix requests
+
+Customers submit from a completed audit report. Pipeline statuses: NEW → CONTACTED → QUOTED → APPROVED → IN_PROGRESS → COMPLETED / RE_AUDIT / CLOSED.
+
+## Local setup
 
 ```bash
+git clone https://github.com/Levy254885/hukan-seo-auditor.git
+cd hukan-seo-auditor
+npm install
+cp .env.example .env
+npx prisma generate && npx prisma db push
 npm run dev
 npm run worker
-npx prisma db push
 ```
-
-PDF: `GET /api/audits/{publicId}/pdf` (completed audits only)
 
 Repo: https://github.com/Levy254885/hukan-seo-auditor
