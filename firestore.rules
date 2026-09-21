@@ -1,0 +1,105 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function userDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isAdmin() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && userDoc().role == 'ADMIN';
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId)
+        && request.resource.data.role == 'USER'
+        && request.resource.data.email is string;
+      allow update: if isOwner(userId)
+        && request.resource.data.role == resource.data.role
+        || isAdmin();
+      allow delete: if false;
+    }
+
+    match /websites/{websiteId} {
+      allow read: if isSignedIn()
+        && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isSignedIn()
+        && resource.data.userId == request.auth.uid;
+    }
+
+    match /audits/{auditId} {
+      allow read: if isSignedIn()
+        && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.status == 'PENDING_PAYMENT';
+      allow update: if isAdmin();
+      allow delete: if false;
+
+      match /pages/{pageId} {
+        allow read: if isSignedIn()
+          && (get(/databases/$(database)/documents/audits/$(auditId)).data.userId == request.auth.uid
+              || isAdmin());
+        allow write: if false;
+      }
+
+      match /issues/{issueId} {
+        allow read: if isSignedIn()
+          && (get(/databases/$(database)/documents/audits/$(auditId)).data.userId == request.auth.uid
+              || isAdmin());
+        allow write: if false;
+      }
+    }
+
+    match /payments/{paymentId} {
+      allow read: if isSignedIn()
+        && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.status == 'PENDING'
+        && request.resource.data.amount == 500
+        && request.resource.data.currency == 'KES';
+      allow update: if isAdmin();
+      allow delete: if false;
+    }
+
+    match /fixRequests/{requestId} {
+      allow read: if isSignedIn()
+        && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.status == 'NEW';
+      allow update: if isAdmin();
+      allow delete: if false;
+    }
+
+    match /notifications/{notificationId} {
+      allow read, update: if isSignedIn()
+        && resource.data.userId == request.auth.uid;
+      allow create: if isAdmin();
+      allow delete: if isSignedIn()
+        && resource.data.userId == request.auth.uid;
+    }
+
+    match /jobs/{jobId} {
+      allow read, write: if false;
+    }
+
+    match /rateLimits/{docId} {
+      allow read, write: if false;
+    }
+  }
+}
