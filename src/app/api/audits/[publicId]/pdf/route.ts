@@ -16,7 +16,20 @@ export async function GET(
   const audit = await prisma.audit.findFirst({
     where: { publicId, userId: session.user.id },
     include: {
-      issues: { orderBy: { createdAt: "asc" }, take: 40 },
+      issues: {
+        orderBy: { createdAt: "asc" },
+        take: 50,
+      },
+      pages: {
+        orderBy: { createdAt: "asc" },
+        take: 40,
+        select: {
+          url: true,
+          statusCode: true,
+          title: true,
+          pageScore: true,
+        },
+      },
       report: true,
     },
   });
@@ -42,6 +55,7 @@ export async function GET(
     highCount: audit.highCount,
     completedAt: audit.completedAt,
     scoringVersion: audit.scoringVersion,
+    publicId: audit.publicId,
     scores: {
       Technical: audit.technicalScore,
       "On-page": audit.onPageScore,
@@ -58,12 +72,20 @@ export async function GET(
       severity: i.severity,
       category: i.category,
       title: i.title,
+      description: i.description,
       recommendation: i.recommendation,
+      evidence: i.evidence,
       affectedUrl: i.affectedUrl,
+    })),
+    pages: audit.pages.map((p) => ({
+      url: p.url,
+      statusCode: p.statusCode,
+      title: p.title,
+      pageScore: p.pageScore,
     })),
   });
 
-  const filename = `hukan-seo-audit-${audit.domain}-${publicId.slice(0, 8)}.pdf`;
+  const filename = `hukan-seo-audit-${audit.domain.replace(/[^a-z0-9.-]/gi, "_")}-${publicId.slice(0, 8)}.pdf`;
 
   return new NextResponse(new Uint8Array(pdf), {
     status: 200,
