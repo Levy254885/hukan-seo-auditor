@@ -14,7 +14,7 @@ This repository is under active phased development toward a production-ready com
 |-------|--------|--------|
 | 1 | Project foundation (Next.js, Prisma, Tailwind, config) | **Done** |
 | 2 | Authentication & authorization | **Done** |
-| 3 | Website management & audit configuration | Pending |
+| 3 | Website management & audit configuration | **Done** |
 | 4 | Payment integration (M-Pesa / Paystack) | Pending |
 | 5 | Crawler & technical SEO engine | Pending |
 | 6 | Scoring, issues, comparison | Pending |
@@ -45,80 +45,25 @@ This repository is under active phased development toward a production-ready com
 ## Local setup
 
 ```bash
-# Clone
 git clone https://github.com/Levy254885/hukan-seo-auditor.git
 cd hukan-seo-auditor
-
-# Install
 npm install
-
-# Environment
 cp .env.example .env
 # Edit .env with DATABASE_URL and NEXTAUTH_SECRET
-
-# Database
 npx prisma generate
 npx prisma db push
-
-# Dev server
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
 
-## Scripts
+## Current customer path (implemented)
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start development server |
-| `npm run build` | Production build |
-| `npm run start` | Start production server |
-| `npm run lint` | ESLint |
-| `npm run db:generate` | Generate Prisma client |
-| `npm run db:push` | Push schema to database |
-| `npm run db:migrate` | Create migration |
-| `npm run worker` | Run audit background worker |
-| `npm test` | Run tests |
-
-## Environment variables
-
-See `.env.example` for the full list. Required for basic local run:
-
-- `DATABASE_URL`
-- `NEXTAUTH_URL`
-- `NEXTAUTH_SECRET`
-
-Payment, email, Google OAuth, and storage keys are required for full production features.
-
-## Architecture overview
-
-```
-Payment confirmed (webhook)
-        ↓
-   Audit Job queued
-        ↓
-   Crawler Worker (SSRF-safe)
-        ↓
-   Analysis + Scoring
-        ↓
-   Report + PDF
-        ↓
-   Dashboard + Download
-```
-
-Users can only access their own websites, audits, payments, and reports (row-level checks on every API).
-
-Admins have a separate role and dashboard for customers, payments, fix requests, and system health.
-
-## Security notes
-
-- Passwords hashed with bcrypt (12 rounds)
-- Webhook signature verification (planned)
-- Crawler blocks private/reserved IPs and localhost (planned)
-- Rate limiting on auth and audit creation (planned)
-- No sequential IDs in public report URLs
-- Secrets never exposed to the client
-- Role-based access control (USER / ADMIN)
+1. Register / sign in
+2. Add a website (URL validated, private IPs blocked)
+3. Configure crawl limit and depth
+4. Audit created with status `PENDING_PAYMENT`
+5. Payment (next phase) — crawl does **not** start yet
 
 ## License
 
