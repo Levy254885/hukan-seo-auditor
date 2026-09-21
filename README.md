@@ -12,8 +12,8 @@ This repository is under active phased development toward a production-ready com
 
 | Phase | Scope | Status |
 |-------|--------|--------|
-| 1 | Project foundation (Next.js, Prisma, Tailwind, config) | In progress |
-| 2 | Authentication & authorization | Pending |
+| 1 | Project foundation (Next.js, Prisma, Tailwind, config) | **Done** |
+| 2 | Authentication & authorization | **Done** |
 | 3 | Website management & audit configuration | Pending |
 | 4 | Payment integration (M-Pesa / Paystack) | Pending |
 | 5 | Crawler & technical SEO engine | Pending |
@@ -112,12 +112,13 @@ Admins have a separate role and dashboard for customers, payments, fix requests,
 
 ## Security notes
 
-- Passwords hashed with bcrypt
-- Webhook signature verification
-- Crawler blocks private/reserved IPs and localhost
-- Rate limiting on auth and audit creation
+- Passwords hashed with bcrypt (12 rounds)
+- Webhook signature verification (planned)
+- Crawler blocks private/reserved IPs and localhost (planned)
+- Rate limiting on auth and audit creation (planned)
 - No sequential IDs in public report URLs
 - Secrets never exposed to the client
+- Role-based access control (USER / ADMIN)
 
 ## License
 
