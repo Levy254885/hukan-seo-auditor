@@ -13,41 +13,31 @@ Professional SaaS platform for comprehensive website SEO audits.
 | 3 | Website management & audit configuration | **Done** |
 | 4 | Payment integration (M-Pesa / Paystack) | **Done** |
 | 5 | Crawler & technical SEO engine | **Done** |
-| 6 | Scoring, issues, comparison | Partial (scoring v1.0 in Phase 5) |
-| 7 | Dashboard & report UI | Partial |
-| 8 | PDF generation | Pending |
+| 6 | Scoring, issues, comparison | **Done** |
+| 7 | Dashboard & report UI | **Done** |
+| 8 | PDF generation | **Done** (v1 text PDF) |
 | 9 | Search Console OAuth | Pending |
 | 10 | Admin CRM & fix requests | Pending |
 | 11 | Emails, observability, tests | Pending |
 | 12 | Deployment & production hardening | Pending |
 
-## Crawler
+## Product path
 
-- Real HTTP fetch with timeout and 2MB response limit
-- SSRF protection before and after redirects
-- HTML parse: title, meta, H1, links, images, JSON-LD, Open Graph
-- Deterministic issue rules (no random scores)
-- Scoring version `1.0` stored on each audit
-- Background worker: `npm run worker`
-- Admin/cron process: `POST /api/audits/process` with `Authorization: Bearer $CRON_SECRET`
+1. Register / sign in
+2. Add website (SSRF-safe URL check)
+3. Configure crawl limits → audit `PENDING_PAYMENT`
+4. Pay KES 500 (M-Pesa STK or Paystack webhook)
+5. Worker crawls, scores, stores issues
+6. View report, compare snapshots, download PDF
 
-## Payments
-
-- Amount: **KES 500** server-side only
-- M-Pesa STK + Paystack webhooks
-- Audit queued only after confirmed payment
-
-## Local setup
+## Key commands
 
 ```bash
-git clone https://github.com/Levy254885/hukan-seo-auditor.git
-cd hukan-seo-auditor
-npm install
-cp .env.example .env
-npx prisma generate && npx prisma db push
 npm run dev
-# In another terminal:
 npm run worker
+npx prisma db push
 ```
+
+PDF: `GET /api/audits/{publicId}/pdf` (completed audits only)
 
 Repo: https://github.com/Levy254885/hukan-seo-auditor
