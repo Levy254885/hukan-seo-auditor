@@ -4,18 +4,14 @@ Professional SaaS platform for comprehensive website SEO audits.
 
 **Price:** KES 500 per audit (one-time payment).
 
-Customers pay, the system crawls the website, runs deterministic technical and on-page checks, scores results, and generates a downloadable professional PDF report. Optional "Request SEO Fixes" workflow for the Hukan team.
-
 ## Status
-
-This repository is under active phased development toward a production-ready commercial product.
 
 | Phase | Scope | Status |
 |-------|--------|--------|
-| 1 | Project foundation (Next.js, Prisma, Tailwind, config) | **Done** |
+| 1 | Project foundation | **Done** |
 | 2 | Authentication & authorization | **Done** |
 | 3 | Website management & audit configuration | **Done** |
-| 4 | Payment integration (M-Pesa / Paystack) | Pending |
+| 4 | Payment integration (M-Pesa / Paystack) | **Done** |
 | 5 | Crawler & technical SEO engine | Pending |
 | 6 | Scoring, issues, comparison | Pending |
 | 7 | Dashboard & report UI | Pending |
@@ -25,22 +21,23 @@ This repository is under active phased development toward a production-ready com
 | 11 | Emails, observability, tests | Pending |
 | 12 | Deployment & production hardening | Pending |
 
-## Tech stack
+## Payments
 
-- **Frontend / API:** Next.js 15 (App Router), React 19, TypeScript
-- **Styling:** Tailwind CSS 4
-- **Database:** PostgreSQL + Prisma
-- **Auth:** NextAuth.js (credentials + optional Google)
-- **Payments:** Designed for M-Pesa (Daraja) and/or Paystack
-- **Crawler:** Custom (cheerio + fetch) with SSRF protection
-- **Charts:** Recharts
-- **Jobs:** Background worker process (tsx)
+- Amount: **KES 500** (hardcoded server-side)
+- Providers: M-Pesa STK push (Daraja) and Paystack
+- Audit is queued **only** after webhook confirmation
+- Duplicate webhooks are idempotent
+- Frontend payment status is never trusted
 
-## Prerequisites
+Required env vars (see `.env.example`):
 
-- Node.js 20+
-- PostgreSQL 15+
-- npm
+- `MPESA_CONSUMER_KEY`, `MPESA_CONSUMER_SECRET`, `MPESA_SHORTCODE`, `MPESA_PASSKEY`, `MPESA_CALLBACK_URL`, `MPESA_ENV`
+- and/or `PAYSTACK_SECRET_KEY`, `PAYSTACK_WEBHOOK_SECRET`
+
+Webhook URLs:
+
+- `POST /api/payments/mpesa/callback`
+- `POST /api/payments/paystack/webhook`
 
 ## Local setup
 
@@ -49,22 +46,8 @@ git clone https://github.com/Levy254885/hukan-seo-auditor.git
 cd hukan-seo-auditor
 npm install
 cp .env.example .env
-# Edit .env with DATABASE_URL and NEXTAUTH_SECRET
-npx prisma generate
-npx prisma db push
+npx prisma generate && npx prisma db push
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
-
-## Current customer path (implemented)
-
-1. Register / sign in
-2. Add a website (URL validated, private IPs blocked)
-3. Configure crawl limit and depth
-4. Audit created with status `PENDING_PAYMENT`
-5. Payment (next phase) — crawl does **not** start yet
-
-## License
-
-Proprietary — All rights reserved.
+Repo: https://github.com/Levy254885/hukan-seo-auditor
