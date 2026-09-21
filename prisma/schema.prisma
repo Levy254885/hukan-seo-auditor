@@ -1,0 +1,422 @@
+// Hukan SEO Auditor — Database Schema
+// Production-oriented relational model for SaaS audits, payments, and admin CRM
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum AuditStatus {
+  PENDING_PAYMENT
+  QUEUED
+  CRAWLING
+  ANALYZING
+  SCORING
+  GENERATING_REPORT
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  REFUNDED
+  EXPIRED
+}
+
+enum IssueSeverity {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+  INFO
+}
+
+enum IssueStatus {
+  OPEN
+  RESOLVED
+  IGNORED
+}
+
+enum FixRequestStatus {
+  NEW
+  CONTACTED
+  QUOTED
+  APPROVED
+  IN_PROGRESS
+  COMPLETED
+  RE_AUDIT
+  CLOSED
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified DateTime?
+  name          String?
+  passwordHash  String?
+  role          Role      @default(USER)
+  image         String?
+  phone         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  websites              Website[]
+  audits                Audit[]
+  payments              Payment[]
+  fixRequests           FixRequest[]
+  notifications         Notification[]
+  searchConsoleConnections SearchConsoleConnection[]
+  accounts              Account[]
+  sessions              Session[]
+
+  @@index([email])
+  @@index([role])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Website {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  url         String
+  domain      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  lastAuditAt DateTime?
+  latestScore Int?
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  audits Audit[]
+
+  @@unique([userId, domain])
+  @@index([userId])
+  @@index([domain])
+}
+
+model Audit {
+  id              String      @id @default(cuid())
+  publicId        String      @unique @default(cuid())
+  userId          String
+  websiteId       String
+  status          AuditStatus @default(PENDING_PAYMENT)
+  url             String
+  domain          String
+  crawlLimit      Int         @default(50)
+  crawlDepth      Int         @default(3)
+  includePaths    String[]    @default([])
+  excludePaths    String[]    @default([])
+  overallScore    Int?
+  scoringVersion  String      @default("1.0")
+  pagesCrawled    Int         @default(0)
+  issuesCount     Int         @default(0)
+  criticalCount   Int         @default(0)
+  highCount       Int         @default(0)
+  progress        Int         @default(0)
+  progressMessage String?
+  errorMessage    String?
+  startedAt       DateTime?
+  completedAt     DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  technicalScore      Int?
+  onPageScore         Int?
+  contentScore        Int?
+  linksScore          Int?
+  imagesScore         Int?
+  performanceScore    Int?
+  structuredDataScore Int?
+  mobileScore         Int?
+  localSeoScore       Int?
+  geoScore            Int?
+
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  website     Website           @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+  pages       AuditPage[]
+  issues      AuditIssue[]
+  payments    Payment[]
+  reports     Report[]
+  fixRequests FixRequest[]
+  jobs        AuditJob[]
+
+  @@index([userId])
+  @@index([websiteId])
+  @@index([status])
+  @@index([publicId])
+  @@index([createdAt])
+}
+
+model AuditJob {
+  id          String   @id @default(cuid())
+  auditId     String
+  stage       String
+  status      String
+  attempts    Int      @default(0)
+  maxAttempts Int      @default(3)
+  error       String?
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  audit Audit @relation(fields: [auditId], references: [id], onDelete: Cascade)
+
+  @@index([auditId])
+  @@index([status])
+}
+
+model AuditPage {
+  id                String   @id @default(cuid())
+  auditId           String
+  url               String
+  normalizedUrl     String
+  statusCode        Int?
+  responseTimeMs    Int?
+  title             String?
+  titleLength       Int?
+  metaDescription   String?
+  descriptionLength Int?
+  h1                String?
+  headings          Json?
+  wordCount         Int?
+  canonical         String?
+  robotsDirectives  String?
+  indexable         Boolean  @default(true)
+  internalLinks     Int      @default(0)
+  externalLinks     Int      @default(0)
+  imagesCount       Int      @default(0)
+  imagesMissingAlt  Int      @default(0)
+  structuredData    Json?
+  openGraph         Json?
+  twitterMeta       Json?
+  pageScore         Int?
+  issues            Json?
+  contentType       String?
+  redirectedFrom    String?
+  depth             Int      @default(0)
+  createdAt         DateTime @default(now())
+
+  audit Audit @relation(fields: [auditId], references: [id], onDelete: Cascade)
+
+  @@unique([auditId, normalizedUrl])
+  @@index([auditId])
+  @@index([statusCode])
+}
+
+model AuditIssue {
+  id             String        @id @default(cuid())
+  auditId        String
+  ruleId         String
+  category       String
+  severity       IssueSeverity
+  title          String
+  description    String
+  evidence       String?
+  affectedUrl    String?
+  affectedElement String?
+  recommendation String
+  estimatedImpact String?
+  status         IssueStatus   @default(OPEN)
+  firstDetected  DateTime      @default(now())
+  lastDetected   DateTime      @default(now())
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  audit Audit @relation(fields: [auditId], references: [id], onDelete: Cascade)
+
+  @@index([auditId])
+  @@index([severity])
+  @@index([category])
+  @@index([status])
+  @@index([ruleId])
+}
+
+model Payment {
+  id                String        @id @default(cuid())
+  userId            String
+  auditId           String?
+  amount            Int
+  currency          String        @default("KES")
+  provider          String
+  providerReference String?
+  checkoutRequestId String?
+  merchantRequestId String?
+  status            PaymentStatus @default(PENDING)
+  phone             String?
+  metadata          Json?
+  failureReason     String?
+  createdAt         DateTime      @default(now())
+  completedAt       DateTime?
+  updatedAt         DateTime      @updatedAt
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  audit Audit? @relation(fields: [auditId], references: [id], onDelete: SetNull)
+
+  @@unique([provider, providerReference])
+  @@index([userId])
+  @@index([auditId])
+  @@index([status])
+  @@index([providerReference])
+}
+
+model Report {
+  id          String   @id @default(cuid())
+  auditId     String
+  publicToken String?  @unique
+  shareEnabled Boolean @default(false)
+  pdfPath     String?
+  pdfGeneratedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  audit Audit @relation(fields: [auditId], references: [id], onDelete: Cascade)
+
+  @@index([auditId])
+  @@index([publicToken])
+}
+
+model FixRequest {
+  id                  String           @id @default(cuid())
+  userId              String
+  auditId             String
+  name                String
+  email               String
+  phone               String?
+  preferredContact    String?
+  message             String?
+  status              FixRequestStatus @default(NEW)
+  quotedAmount        Int?
+  agreedAmount        Int?
+  internalNotes       String?
+  contactStatus       String?
+  completedAt         DateTime?
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  audit Audit @relation(fields: [auditId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([auditId])
+  @@index([status])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  body      String
+  link      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+  @@index([createdAt])
+}
+
+model SearchConsoleConnection {
+  id           String   @id @default(cuid())
+  userId       String
+  siteUrl      String
+  accessToken  String   @db.Text
+  refreshToken String?  @db.Text
+  expiresAt    DateTime?
+  scopes       String[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user    User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  metrics SearchConsoleMetric[]
+
+  @@unique([userId, siteUrl])
+  @@index([userId])
+}
+
+model SearchConsoleMetric {
+  id           String   @id @default(cuid())
+  connectionId String
+  date         DateTime @db.Date
+  clicks       Int      @default(0)
+  impressions  Int      @default(0)
+  ctr          Float?
+  position     Float?
+  query        String?
+  page         String?
+  country      String?
+  device       String?
+  createdAt    DateTime @default(now())
+
+  connection SearchConsoleConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
+  @@index([connectionId, date])
+}
+
+model SystemLog {
+  id        String   @id @default(cuid())
+  level     String
+  message   String
+  context   Json?
+  createdAt DateTime @default(now())
+
+  @@index([level])
+  @@index([createdAt])
+}
+
+model AppSettings {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       Json
+  updatedAt   DateTime @updatedAt
+}
