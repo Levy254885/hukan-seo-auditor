@@ -36,6 +36,22 @@ export default async function AuditDetailPage({
         </p>
         <h1 className="text-2xl font-semibold tracking-tight">{audit.domain}</h1>
         <p className="mt-1 text-sm text-[var(--muted-foreground)] break-all">{audit.url}</p>
+        {audit.status === "COMPLETED" && (
+          <div className="mt-4 flex flex-wrap gap-3">
+            <a
+              href={`/api/audits/${audit.publicId}/pdf`}
+              className="inline-flex rounded-md bg-[var(--primary)] px-4 py-2 text-sm font-medium text-[var(--primary-foreground)] hover:opacity-90"
+            >
+              Download PDF
+            </a>
+            <Link
+              href={`/dashboard/audits/${audit.publicId}/compare`}
+              className="inline-flex rounded-md border border-[var(--border)] px-4 py-2 text-sm"
+            >
+              Compare with previous
+            </Link>
+          </div>
+        )}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
