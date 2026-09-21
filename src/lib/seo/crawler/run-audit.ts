@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { fetchPage } from "@/lib/seo/crawler/fetch";
 import { parseHtml } from "@/lib/seo/crawler/parse";
+import { checkSiteFiles } from "@/lib/seo/crawler/site-files";
 import { detectPageIssues, type DetectedIssue } from "@/lib/seo/checks/issues";
 import { scoreFromIssues, SCORING_VERSION } from "@/lib/seo/scoring/score";
 import { getDomainFromUrl, parsePublicHttpUrl } from "@/lib/seo/url";
@@ -103,11 +104,7 @@ export async function runAuditCrawl(auditId: string) {
         100 -
           pageIssues.reduce((sum, i) => {
             const map: Record<string, number> = {
-              CRITICAL: 25,
-              HIGH: 12,
-              MEDIUM: 6,
-              LOW: 2,
-              INFO: 0,
+              CRITICAL: 25, HIGH: 12, MEDIUM: 6, LOW: 2, INFO: 0,
             };
             return sum + (map[i.severity] ?? 0);
           }, 0)
@@ -147,12 +144,7 @@ export async function runAuditCrawl(auditId: string) {
 
       pagesCrawled += 1;
 
-      if (
-        parsed &&
-        item.depth < audit.crawlDepth &&
-        fetched.statusCode >= 200 &&
-        fetched.statusCode < 400
-      ) {
+      if (parsed && item.depth < audit.crawlDepth && fetched.statusCode >= 200 && fetched.statusCode < 400) {
         for (const link of parsed.internalLinks) {
           try {
             const host = getDomainFromUrl(link);
@@ -160,14 +152,21 @@ export async function runAuditCrawl(auditId: string) {
             const n = normalizeKey(link);
             if (visited.has(n)) continue;
             if (shouldExclude(link, audit.excludePaths)) continue;
-            const parsedLink = parsePublicHttpUrl(link);
-            if (!parsedLink) continue;
+            if (!parsePublicHttpUrl(link)) continue;
             queue.push({ url: link, depth: item.depth + 1 });
           } catch {
             // skip
           }
         }
       }
+    }
+
+    try {
+      const origin = new URL(seed).origin;
+      const siteIssues = await checkSiteFiles(origin);
+      for (const issue of siteIssues) allIssues.push(issue);
+    } catch {
+      // non-fatal
     }
 
     await prisma.audit.update({
