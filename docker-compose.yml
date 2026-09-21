@@ -1,0 +1,44 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: hukan
+      POSTGRES_PASSWORD: hukan_dev_password
+      POSTGRES_DB: hukan_seo_auditor
+    ports:
+      - "5432:5432"
+    volumes:
+      - hukan_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hukan -d hukan_seo_auditor"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://hukan:hukan_dev_password@db:5432/hukan_seo_auditor?schema=public
+      NEXTAUTH_URL: http://localhost:3000
+      NEXTAUTH_SECRET: change-me-in-production-min-32-chars-long
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      ADMIN_EMAIL: admin@example.com
+    depends_on:
+      db:
+        condition: service_healthy
+
+  worker:
+    build: .
+    command: ["npx", "tsx", "src/workers/audit-worker.ts"]
+    environment:
+      DATABASE_URL: postgresql://hukan:hukan_dev_password@db:5432/hukan_seo_auditor?schema=public
+      NEXTAUTH_SECRET: change-me-in-production-min-32-chars-long
+      WORKER_POLL_MS: "5000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  hukan_pg:
